@@ -1,6 +1,6 @@
 # Range_circle
 [Lmaobox Lua] draws Melee range circle
 
-all credit to original creator who made superior version adn wait s for it to be compleate before uploading
-i made beta so you could have a taste of it.
+[![Download Latest](https://img.shields.io/github/downloads/titaniummachine1/Range_circle/total.svg?style=for-the-badge&logo=download&label=Download%20Latest)](https://github.com/titaniummachine1/Range_circle/releases/latest/download/Range_circle)
+
 https://www.youtube.com/watch?v=ZkQuFGBFG0w&feature=emb_logo
