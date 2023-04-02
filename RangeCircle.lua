@@ -21,7 +21,7 @@ menu.Style.Outline = true                 -- Outline around the menu
     client.SetConVar("mp_respawnwavetime", -1)
 end, ItemFlags.FullWidth))]]
 local mEnable     = menu:AddComponent(MenuLib.Checkbox("Enable", true))
-local mHeight     = menu:AddComponent(MenuLib.Slider("height", 0 ,85 , 75 ))
+local mHeight     = menu:AddComponent(MenuLib.Slider("height", 1 ,85 , 1 ))
 local mresolution = menu:AddComponent(MenuLib.Slider("resolution", 1 ,360 , 32 ))
 -- debug command: ent_fire !picker Addoutput "health 99"
 local myfont = draw.CreateFont( "Verdana", 16, 800 ) -- Create a font for doDraw
@@ -71,21 +71,25 @@ local vhitbox_width = 18
 
 
 -- Calculate the vertex positions around the circle
--- Define circle parameters
 local center = pLocal:GetAbsOrigin()
 local radius = swingrange + 10 -- radius of the circle
 local segments = mresolution:GetValue() -- number of segments to use for the circle
--- Calculate vertices for the circle
-local vertices = {}
+local vertices = {} -- table to store circle vertices
+
 for i = 1, segments do
   local angle = math.rad(i * (360 / segments))
-  local x = center.x + math.cos(angle) * radius
-  local y = center.y + math.sin(angle) * radius
+  local direction = Vector3(math.cos(angle), math.sin(angle), 0)
+  local trace = engine.TraceLine(center, center + direction * radius, MASK_SHOT_HULL)
+  
+  local distance = trace.fraction * radius -- calculate distance to hit point
+  if distance > radius then distance = radius end -- limit distance to radius
+  
+  local x = center.x + math.cos(angle) * distance
+  local y = center.y + math.sin(angle) * distance
   local z = center.z + mHeight:GetValue()
   vertices[i] = client.WorldToScreen(Vector3(x, y, z))
 end
 
--- Draw the circle
 for i = 1, segments do
   local j = i + 1
   if j > segments then j = 1 end
@@ -93,6 +97,7 @@ for i = 1, segments do
     draw.Line(vertices[i][1], vertices[i][2], vertices[j][1], vertices[j][2])
   end
 end
+
 
 
 
