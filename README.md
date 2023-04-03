@@ -5,4 +5,5 @@
 )
 
 
-https://www.youtube.com/watch?v=ZkQuFGBFG0w&feature=emb_logo
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/ZkQuFGBFG0w/0.jpg)](https://www.youtube.com/watch?v=ZkQuFGBFG0w)
+
