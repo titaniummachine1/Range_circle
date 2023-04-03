@@ -21,8 +21,11 @@ menu.Style.Outline = true                 -- Outline around the menu
     client.SetConVar("mp_respawnwavetime", -1)
 end, ItemFlags.FullWidth))]]
 local mEnable     = menu:AddComponent(MenuLib.Checkbox("Enable", true))
+local mdrawCone   = menu:AddComponent(MenuLib.Checkbox("Draw Cone", false))
 local mHeight     = menu:AddComponent(MenuLib.Slider("height", 1 ,85 , 1 ))
-local mresolution = menu:AddComponent(MenuLib.Slider("resolution", 1 ,360 , 32 ))
+local mTHeightt   = menu:AddComponent(MenuLib.Slider("cone size", 0 ,100 , 85 ))
+local mresolution = menu:AddComponent(MenuLib.Slider("resolution", 1 ,360 , 64 ))
+
 -- debug command: ent_fire !picker Addoutput "health 99"
 local myfont = draw.CreateFont( "Verdana", 16, 800 ) -- Create a font for doDraw
 
@@ -61,25 +64,19 @@ local vhitbox_width = 18
     local w, h = draw.GetScreenSize()
     local screenPos = { w / 2 - 15, h / 2 + 35}
 
-    local screenPos = client.WorldToScreen(pLocalOrigin)
-    if screenPos ~= nil then
-        draw.Line(screenPos[1] + 10, screenPos[2], screenPos[1] - 10, screenPos[2])
-        draw.Line(screenPos[1], screenPos[2] - 10, screenPos[1], screenPos[2] + 10)
-    end
-
     --text
 
 
 -- Calculate the vertex positions around the circle
 local center = pLocal:GetAbsOrigin()
-local radius = swingrange + 10 -- radius of the circle
+local radius = swingrange + 20 -- radius of the circle
 local segments = mresolution:GetValue() -- number of segments to use for the circle
 local vertices = {} -- table to store circle vertices
 
 for i = 1, segments do
   local angle = math.rad(i * (360 / segments))
   local direction = Vector3(math.cos(angle), math.sin(angle), 0)
-  local trace = engine.TraceLine(center, center + direction * radius, MASK_SHOT_HULL)
+  local trace = engine.TraceLine(pLocalOrigin, center + direction * radius, MASK_SHOT_HULL)
   
   local distance = trace.fraction * radius -- calculate distance to hit point
   if distance > radius then distance = radius end -- limit distance to radius
@@ -87,16 +84,35 @@ for i = 1, segments do
   local x = center.x + math.cos(angle) * distance
   local y = center.y + math.sin(angle) * distance
   local z = center.z + mHeight:GetValue()
+  
+  -- adjust the height based on distance to trace hit point
+  local distance_to_hit = trace.fraction * radius -- calculate distance to hit point
+  if distance_to_hit > 0 then
+    local max_height_adjustment = mTHeightt:GetValue() -- adjust as needed
+    local height_adjustment = (1 - distance_to_hit / radius) * max_height_adjustment
+    z = z + height_adjustment
+  end
+  
   vertices[i] = client.WorldToScreen(Vector3(x, y, z))
 end
 
+-- Calculate the top vertex position
+local top_height = mTHeightt:GetValue() -- adjust as needed
+local top_vertex = client.WorldToScreen(Vector3(center.x, center.y, center.z + top_height))
+
+-- Draw the circle and connect all the vertices to the top point
 for i = 1, segments do
   local j = i + 1
   if j > segments then j = 1 end
   if vertices[i] ~= nil and vertices[j] ~= nil then
     draw.Line(vertices[i][1], vertices[i][2], vertices[j][1], vertices[j][2])
+    if mdrawCone:GetValue() == true then
+      draw.Line(vertices[i][1], vertices[i][2], top_vertex[1], top_vertex[2])
+    end
   end
 end
+
+
 
 
 
