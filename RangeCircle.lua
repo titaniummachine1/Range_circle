@@ -25,7 +25,8 @@ local mdrawCone   = menu:AddComponent(MenuLib.Checkbox("Draw Cone", false))
 local mHeight     = menu:AddComponent(MenuLib.Slider("height", 1 ,85 , 1 ))
 local mTHeightt   = menu:AddComponent(MenuLib.Slider("cone size", 0 ,100 , 85 ))
 local mresolution = menu:AddComponent(MenuLib.Slider("resolution", 1 ,360 , 64 ))
-
+local mcolor_close = menu:AddComponent(MenuLib.Colorpicker("Color close", color))
+local mcolor_far   = menu:AddComponent(MenuLib.Colorpicker("Color Far", color))
 -- debug command: ent_fire !picker Addoutput "health 99"
 local myfont = draw.CreateFont( "Verdana", 16, 800 ) -- Create a font for doDraw
 
@@ -67,11 +68,27 @@ local vhitbox_width = 18
     --text
 
 
+-- Define the two colors to interpolate between
+local color_start = {r = 255, g = 0, b = 0, a = 255} -- red
+local color_end = {r = 0, g = 0, b = 255, a = 255} -- blue
+
+-- Get the selected colors from the menu and convert them to the correct format
+local selected_color = mcolor_close:GetColor()
+local color_close = {r = selected_color[1], g = selected_color[2], b = selected_color[3], a = selected_color[4]}
+
+selected_color = mcolor_far:GetColor()
+local color_far = {r = selected_color[1], g = selected_color[2], b = selected_color[3], a = selected_color[4]}
+
+-- Set the starting and ending colors to the selected colors
+color_start = color_close
+color_end = color_far
+
 -- Calculate the vertex positions around the circle
 local center = pLocal:GetAbsOrigin()
 local radius = swingrange + 20 -- radius of the circle
 local segments = mresolution:GetValue() -- number of segments to use for the circle
 local vertices = {} -- table to store circle vertices
+local colors = {} -- table to store colors for each vertex
 
 for i = 1, segments do
   local angle = math.rad(i * (360 / segments))
@@ -94,6 +111,14 @@ for i = 1, segments do
   end
   
   vertices[i] = client.WorldToScreen(Vector3(x, y, z))
+  
+  -- calculate the color for this line based on the height of the point
+  local t = (z - center.z) / mTHeightt:GetValue()
+  local color = {}
+  for key, value in pairs(color_close) do
+    color[key] = math.floor((1 - t) * value + t * color_far[key])
+  end
+  colors[i] = color
 end
 
 -- Calculate the top vertex position
@@ -105,12 +130,15 @@ for i = 1, segments do
   local j = i + 1
   if j > segments then j = 1 end
   if vertices[i] ~= nil and vertices[j] ~= nil then
+    draw.Color(colors[i].r, colors[i].g, colors[i].b, colors[i].a)
     draw.Line(vertices[i][1], vertices[i][2], vertices[j][1], vertices[j][2])
     if mdrawCone:GetValue() == true then
       draw.Line(vertices[i][1], vertices[i][2], top_vertex[1], top_vertex[2])
     end
   end
 end
+
+
 
 
 
@@ -153,12 +181,17 @@ end
 draw.Line(vertices[resolution], vertices[1])
 ]]
 end
-
+--[[ Remove the menu when unloaded ]]--
+local function OnUnload()                                -- Called when the script is unloaded
+    MenuLib.RemoveMenu(menu)                             -- Remove the menu
+    client.Command('play "ui/buttonclickrelease"', true) -- Play the "buttonclickrelease" sound
+end
 
 --[[ Unregister previous callbacks ]]--
-
+callbacks.Unregister("Unload", "MCT_Unload")                    -- Unregister the "Unload" callback
 callbacks.Unregister("Draw", "MCT_Draw")                        -- Unregister the "Draw" callback
 --[[ Register callbacks ]]--
+callbacks.Register("Unload", "MCT_Unload", OnUnload)                         -- Register the "Unload" callback
 callbacks.Register("Draw", "MCT_Draw", doDraw)                               -- Register the "Draw" callback
 --[[ Play sound when loaded ]]--
 client.Command('play "ui/buttonclick"', true) -- Play the "buttonclick" sound when the script is loaded
