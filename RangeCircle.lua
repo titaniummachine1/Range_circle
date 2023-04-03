@@ -69,19 +69,18 @@ local vhitbox_width = 18
 
 
 -- Define the two colors to interpolate between
-local color_start = {r = 255, g = 0, b = 0, a = 255} -- red
-local color_end = {r = 0, g = 0, b = 255, a = 255} -- blue
+local color_close = {r = 255, g = 0, b = 0, a = 255} -- red
+local color_far = {r = 0, g = 0, b = 255, a = 255} -- blue
 
 -- Get the selected colors from the menu and convert them to the correct format
-local selected_color = mcolor_close:GetColor()
-local color_close = {r = selected_color[1], g = selected_color[2], b = selected_color[3], a = selected_color[4]}
+local selected_color = mcolor_far:GetColor()
+color_close = {r = selected_color[1], g = selected_color[2], b = selected_color[3], a = selected_color[4]}
 
-selected_color = mcolor_far:GetColor()
-local color_far = {r = selected_color[1], g = selected_color[2], b = selected_color[3], a = selected_color[4]}
+local selected_color1 = mcolor_close:GetColor()
+color_far = {r = selected_color1[1], g = selected_color1[2], b = selected_color1[3], a = selected_color1[4]}
 
--- Set the starting and ending colors to the selected colors
-color_start = color_close
-color_end = color_far
+-- Calculate the target distance for the color to be completely at the close color
+local target_distance = (swingrange - 100) * 0.1
 
 -- Calculate the vertex positions around the circle
 local center = pLocal:GetAbsOrigin()
@@ -113,7 +112,12 @@ for i = 1, segments do
   vertices[i] = client.WorldToScreen(Vector3(x, y, z))
   
   -- calculate the color for this line based on the height of the point
-  local t = (z - center.z) / mTHeightt:GetValue()
+  local t = (z - center.z - target_distance) / (mTHeightt:GetValue() - target_distance)
+  if t < 0 then
+    t = 0
+  elseif t > 1 then
+    t = 1
+  end
   local color = {}
   for key, value in pairs(color_close) do
     color[key] = math.floor((1 - t) * value + t * color_far[key])
